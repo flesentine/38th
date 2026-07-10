@@ -1,10 +1,12 @@
-const CACHE = "weekend-luxe-v1";
+const CACHE = "weekend-luxe-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
-  "./manifest.webmanifest"
+  "./manifest.webmanifest",
+  "./assets/weekend-luxe-logo.webp",
+  "./assets/icon-192.png"
 ];
 
 self.addEventListener("install", event => {
