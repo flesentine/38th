@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0c1720" />
+  <meta name="description" content="A polished two-day Los Angeles and Orange County birthday weekend itinerary." />
+  <title>Weekend Luxe — Birthday Weekend</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="assets/icon-192.png" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  <header class="hero shell">
+    <div class="brand-card glass">
+      <img class="brand-logo" src="assets/weekend-luxe-logo.webp" alt="Weekend Luxe logo" />
+      <div class="brand-copy">
+        <p class="eyebrow">July 11–12, 2026 · Los Angeles + Laguna Beach</p>
+        <h1>Birthday Weekend, planned.</h1>
+        <p class="hero-subtitle">Gold in DTLA, classic Beverly Hills, Sawdust art, and an oceanfront birthday dinner.</p>
+        <div class="hero-actions">
+          <button id="installButton" class="button button-primary" hidden>Install app</button>
+          <button id="shareButton" class="button button-secondary">Share plan</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="status-strip glass" aria-label="Weekend overview">
+      <div><span class="status-label">Next stop</span><strong id="nextStop">Loading itinerary…</strong></div>
+      <div><span class="status-label">Countdown</span><strong id="countdown">—</strong></div>
+      <div><span class="status-label">Reservation</span><strong>Splashes · Sun 7:15 PM</strong></div>
+    </section>
+  </header>
+
+  <main class="shell">
+    <nav class="day-switcher glass" aria-label="Choose itinerary day">
+      <button class="day-tab active" data-day="saturday" aria-selected="true"><span>Saturday</span><small>Gold + Beverly Hills</small></button>
+      <button class="day-tab" data-day="sunday" aria-selected="false"><span>Sunday</span><small>Laguna birthday day</small></button>
+    </nav>
+
+    <section class="weather-section section-block">
+      <div class="section-heading">
+        <div><p class="eyebrow">Live forecast</p><h2>Weather along the route</h2></div>
+        <button id="refreshWeather" class="text-button" type="button">Refresh weather</button>
+      </div>
+      <p class="section-note">Forecast data loads directly from Open-Meteo. Conditions can change, especially near the coast.</p>
+      <div id="weatherGrid" class="weather-grid" aria-live="polite"></div>
+    </section>
+
+    <section id="saturday" class="day-panel active" aria-labelledby="satTitle">
+      <div class="section-heading">
+        <div><p class="eyebrow">Saturday, July 11</p><h2 id="satTitle">Gold run + classic Beverly Hills</h2></div>
+        <span class="day-badge">Smart casual</span>
+      </div>
+
+      <div class="timeline">
+        <article class="stop-card glass" data-datetime="2026-07-11T07:45:00-07:00">
+          <div class="time-pill">7:45 AM</div><div class="stop-icon">🥞</div>
+          <div class="stop-content"><h3>Aloha Stacks breakfast</h3><p>Start with the bigger breakfast here, then keep Beverly Hills food light later.</p><div class="stop-meta"><span>Rancho Santa Margarita</span><span>60 min</span></div><div class="stop-actions"><a class="mini-button" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Aloha+Stacks+Rancho+Santa+Margarita">Directions</a><label class="check-control"><input type="checkbox" data-check="sat-breakfast" /> Done</label></div></div>
+        </article>
+
+        <article class="stop-card glass featured" data-datetime="2026-07-11T10:00:00-07:00">
+          <div class="time-pill">10:00 AM</div><div class="stop-icon">🪙</div>
+          <div class="stop-content"><h3>Buy 24k investment bullion</h3><p>Start at St. Vincent Jewelry Center. Ask for a 1 oz .9999 Maple Leaf, Buffalo, or sealed assay bar—not jewelry.</p><div class="stop-meta"><span>650 S Hill St, Los Angeles</span><span>75 min</span></div><div class="callout"><strong>Ask every dealer:</strong> price over spot, exact premium, and today’s buyback price.</div><div class="stop-actions"><a class="mini-button" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=St.+Vincent+Jewelry+Center+650+S+Hill+St+Los+Angeles">Directions</a><label class="check-control"><input type="checkbox" data-check="sat-gold" /> Done</label></div></div>
+        </article>
+
+        <article class="stop-card glass" data-datetime="2026-07-11T12:15:00-07:00">
+          <div class="time-pill">12:15 PM</div><div class="stop-icon">☕</div>
+          <div class="stop-content"><h3>Fountain Coffee Room attempt</h3><p>Try the iconic 19-seat counter at The Beverly Hills Hotel for coffee, pie, cake, a milkshake, or a light bite.</p><div class="stop-meta"><span>The Beverly Hills Hotel</span><span>Walk-in only</span></div><div class="callout warning"><strong>Three-seat rule:</strong> wait no more than 20–25 minutes. If packed, switch to Maybourne Café.</div><div class="stop-actions"><a class="mini-button" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Fountain+Coffee+Room+Beverly+Hills+Hotel">Directions</a><a class="mini-button quiet" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Maybourne+Cafe+Beverly+Hills">Backup café</a><label class="check-control"><input type="checkbox" data-check="sat-coffee" /> Done</label></div></div>
+        </article>
+
+        <article class="stop-card glass" data-datetime="2026-07-11T13:15:00-07:00">
+          <div class="time-pill">1:15 PM</div><div class="stop-icon">🌴</div>
+          <div class="stop-content"><h3>Explore the Pink Palace</h3><p>Walk the Beverly Hills Hotel public areas and take a few classic birthday-weekend photos.</p><div class="stop-meta"><span>Beverly Hills Hotel</span><span>30–40 min</span></div><div class="stop-actions"><label class="check-control"><input type="checkbox" data-check="sat-hotel" /> Done</label></div></div>
+        </article>
+
+        <article class="stop-card glass" data-datetime="2026-07-11T14:00:00-07:00">
+          <div class="time-pill">2:00 PM</div><div class="stop-icon">🛍️</div>
+          <div class="stop-content"><h3>Rodeo Drive + Two Rodeo</h3><p>Window-shop, browse a few luxury stores, and stop for photos without turning the afternoon into a marathon.</p><div class="stop-meta"><span>Rodeo Drive</span><span>75–90 min</span></div><div class="stop-actions"><a class="mini-button" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Two+Rodeo+Drive+Beverly+Hills">Directions</a><label class="check-control"><input type="checkbox" data-check="sat-rodeo" /> Done</label></div></div>
+        </article>
+
+        <article class="stop-card glass" data-datetime="2026-07-11T15:40:00-07:00">
+          <div class="time-pill">3:40 PM</div><div class="stop-icon">📸</div>
+          <div class="stop-content"><h3>Beverly Hills sign + Lily Pond</h3><p>A quick, easy photo stop at Beverly Gardens Park.</p><div class="stop-meta"><span>Beverly Gardens Park</span><span>20 min</span></div><div class="stop-actions"><a class="mini-button" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Beverly+Hills+Sign+Lily+Pond">Directions</a><label class="check-control"><input type="checkbox" data-check="sat-sign" /> Done</label></div></div>
+        </article>
+
+        <article class="stop-card glass" data-datetime="2026-07-11T16:15:00-07:00">
+          <div class="time-pill">4:15 PM</div><div class="stop-icon">🏛️</div>
+          <div class="stop-content"><h3>Greystone Mansion gardens</h3><p>Finish with an old-Hollywood garden walk, then head home before everyone is worn out.</p><div class="stop-meta"><span>905 Loma Vista Dr</span><span>45–60 min</span></div><div class="stop-actions"><a class="mini-button" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Greystone+Mansion+Gardens">Directions</a><label class="check-control"><input type="checkbox" data-check="sat-greystone" /> Done</label></div></div>
+        </article>
+      </div>
+
+      <section class="tool-card glass section-block">
+        <p class="eyebrow">Bullion quote checker</p><h2>Know the premium before you buy</h2>
+        <div class="calculator-grid">
+          <label>Spot price / oz<div class="input-wrap"><span>$</span><input id="spotPrice" type="number" min="0" step="0.01" placeholder="4100" /></div></label>
+          <label>Dealer price<div class="input-wrap"><span>$</span><input id="dealerPrice" type="number" min="0" step="0.01" placeholder="4250" /></div></label>
+          <label>Dealer buyback<div class="input-wrap"><span>$</span><input id="buybackPrice" type="number" min="0" step="0.01" placeholder="4050" /></div></label>
+        </div>
+        <div id="quoteResult" class="quote-result">Enter the dealer’s numbers to see the premium and round-trip spread.</div>
+        <p class="fine-print">Use this as a comparison tool, not authentication. Confirm purity, weight, assay details, and return/buyback terms.</p>
+      </section>
+    </section>
+
+    <section id="sunday" class="day-panel" aria-labelledby="sunTitle" hidden>
+      <div class="section-heading"><div><p class="eyebrow">Sunday, July 12</p><h2 id="sunTitle">Relaxed birthday day in Laguna</h2></div><span class="day-badge">Dinner confirmed</span></div>
+      <div class="timeline">
+        <article class="stop-card glass" data-datetime="2026-07-12T09:30:00-07:00"><div class="time-pill">Morning</div><div class="stop-icon">🎁</div><div class="stop-content"><h3>Slow birthday morning</h3><p>No massage appointment. Keep it easy: card, flowers or gift, relaxed breakfast, and time to get ready without rushing.</p><div class="stop-meta"><span>Home</span><span>Unstructured</span></div><div class="stop-actions"><label class="check-control"><input type="checkbox" data-check="sun-morning" /> Done</label></div></div></article>
+
+        <article class="stop-card glass" data-datetime="2026-07-12T14:15:00-07:00"><div class="time-pill">2:15 PM</div><div class="stop-icon">🚗</div><div class="stop-content"><h3>Leave RSM for Laguna Beach</h3><p>Build in Sunday summer traffic and parking time. Arriving early is better than turning the day into a race.</p><div class="stop-meta"><span>RSM → Laguna Beach</span><span>45–60 min</span></div><div class="stop-actions"><a class="mini-button" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&origin=Rancho+Santa+Margarita+CA&destination=Sawdust+Art+Festival+Laguna+Beach">Route</a><label class="check-control"><input type="checkbox" data-check="sun-drive" /> Done</label></div></div></article>
+
+        <article class="stop-card glass" data-datetime="2026-07-12T15:15:00-07:00"><div class="time-pill">3:15 PM</div><div class="stop-icon">🎨</div><div class="stop-content"><h3>Sawdust Art Festival</h3><p>Browse art, live demonstrations, crafts, and snacks. Tickets can be purchased at the gate, keeping the schedule flexible.</p><div class="stop-meta"><span>935 Laguna Canyon Rd</span><span>About 2 hours</span></div><div class="stop-actions"><a class="mini-button" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Sawdust+Art+Festival">Directions</a><a class="mini-button quiet" target="_blank" rel="noopener" href="https://sawdustartfestival.org/">Official site</a><label class="check-control"><input type="checkbox" data-check="sun-sawdust" /> Done</label></div></div></article>
+
+        <article class="stop-card glass" data-datetime="2026-07-12T17:30:00-07:00"><div class="time-pill">5:30 PM</div><div class="stop-icon">🌊</div><div class="stop-content"><h3>Ocean walk or Laguna shops</h3><p>Choose one easy stop based on everyone’s energy: Heisler Park, Main Beach, downtown shops, coffee, or gelato.</p><div class="stop-meta"><span>Laguna Beach</span><span>45–60 min</span></div><div class="stop-actions"><a class="mini-button" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Heisler+Park+Laguna+Beach">Heisler Park</a><a class="mini-button quiet" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Main+Beach+Laguna+Beach">Main Beach</a><label class="check-control"><input type="checkbox" data-check="sun-ocean" /> Done</label></div></div></article>
+
+        <article class="stop-card glass featured" data-datetime="2026-07-12T18:30:00-07:00"><div class="time-pill">6:30 PM</div><div class="stop-icon">✨</div><div class="stop-content"><h3>Arrive at Surf & Sand</h3><p>Valet, settle in, remind the host it is her birthday, and ask for the best available ocean-view table.</p><div class="stop-meta"><span>1555 S Coast Hwy</span><span>Reservation buffer</span></div><div class="stop-actions"><a class="mini-button" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=Splashes+Restaurant+Laguna+Beach">Directions</a><label class="check-control"><input type="checkbox" data-check="sun-arrive" /> Done</label></div></div></article>
+
+        <article class="stop-card glass featured" data-datetime="2026-07-12T19:15:00-07:00"><div class="time-pill">7:15 PM</div><div class="stop-icon">🍽️</div><div class="stop-content"><h3>Birthday dinner at Splashes</h3><p>The main event: oceanfront dinner at Surf & Sand. Keep the rest of the evening open for a brief beach walk or relaxed drive home.</p><div class="reservation-chip">Confirmed · 3 guests</div><div class="stop-actions"><a class="mini-button" target="_blank" rel="noopener" href="https://www.surfandsandresort.com/oceanfront-dining-laguna-beach/splashes">Restaurant</a><label class="check-control"><input type="checkbox" data-check="sun-dinner" /> Done</label></div></div></article>
+      </div>
+    </section>
+
+    <section class="packing-grid section-block">
+      <article class="tool-card glass"><p class="eyebrow">Saturday carry list</p><h2>Gold-day essentials</h2><div class="checklist"><label><input type="checkbox" data-check="pack-id" /> Photo ID</label><label><input type="checkbox" data-check="pack-payment" /> Payment method confirmed</label><label><input type="checkbox" data-check="pack-smallbag" /> Small zipped bag</label><label><input type="checkbox" data-check="pack-receipt" /> Receipt with purity + weight</label><label><input type="checkbox" data-check="pack-car" /> Nothing valuable left in car</label></div></article>
+      <article class="tool-card glass"><p class="eyebrow">Sunday carry list</p><h2>Laguna essentials</h2><div class="checklist"><label><input type="checkbox" data-check="pack-sun" /> Sunscreen + sunglasses</label><label><input type="checkbox" data-check="pack-layer" /> Light evening layer</label><label><input type="checkbox" data-check="pack-shoes" /> Comfortable walking shoes</label><label><input type="checkbox" data-check="pack-card" /> Birthday card / gift</label><label><input type="checkbox" data-check="pack-res" /> Splashes reservation details</label></div></article>
+    </section>
+  </main>
+
+  <footer class="shell footer"><p>Weekend Luxe · Built for the McCullough birthday weekend.</p><p>Weather: Open-Meteo · Maps: Google Maps links</p></footer>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js" defer></script>
+</body>
+</html>
