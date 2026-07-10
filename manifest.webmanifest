@@ -1,0 +1,9 @@
+{
+  "name": "Weekend Luxe Birthday Plan",
+  "short_name": "Weekend Luxe",
+  "description": "A two-day Los Angeles, Beverly Hills and Laguna Beach birthday itinerary.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f7f4ed",
+  "theme_color": "#0c1720"
+}
