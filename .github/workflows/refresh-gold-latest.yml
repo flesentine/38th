@@ -1,0 +1,210 @@
+name: Refresh latest gold quote behavior
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/refresh-gold-latest.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update gold quote behavior
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          app_path = Path('app.js')
+          app = app_path.read_text()
+          marker = '// Live gold pricing and Apple Maps enhancements.'
+          if marker not in app:
+              raise SystemExit('Gold enhancement marker not found')
+
+          replacement = r'''// Live gold pricing and Apple Maps enhancements.
+(() => {
+  const GOLD_API_BASE = "https://api.gold-api.com/price/XAU/USD";
+  const GOLD_CACHE_KEY = "weekend-luxe-live-gold";
+  const MIN_REFRESH_MS = 30_000;
+  let lastSuccessfulFetch = 0;
+  let loading = false;
+  const all = selector => [...document.querySelectorAll(selector)];
+
+  all("a[href*='google.com/maps']").forEach(link => {
+    try {
+      const source = new URL(link.href);
+      const destination = source.searchParams.get("destination") || source.searchParams.get("query");
+      const origin = source.searchParams.get("origin");
+      if (!destination) return;
+      const apple = new URL("https://maps.apple.com/");
+      if (origin) apple.searchParams.set("saddr", origin);
+      apple.searchParams.set("daddr", destination);
+      apple.searchParams.set("dirflg", "d");
+      link.href = apple.toString();
+      if (link.textContent.trim() === "Directions") link.textContent = "Apple Maps";
+      if (link.textContent.trim() === "Route") link.textContent = "Open in Maps";
+    } catch (error) {
+      console.error("Could not convert map link", error);
+    }
+  });
+
+  const footerNotes = all("footer p");
+  if (footerNotes[1]) footerNotes[1].textContent = "Weather: Open-Meteo · Gold: Gold API · Directions: Apple Maps";
+
+  const spotInput = document.querySelector("#spotPrice");
+  const calculator = spotInput?.closest(".calculator-grid");
+  if (!calculator) return;
+
+  const panel = document.createElement("div");
+  panel.className = "gold-live-panel";
+  panel.setAttribute("aria-live", "polite");
+  panel.innerHTML = `<div class="gold-live-copy"><span id="goldLiveLabel" class="gold-live-label">Latest available XAU/USD · 1 troy oz</span><strong id="liveGoldPrice">Loading newest gold quote…</strong><small id="goldUpdatedAt">Connecting to Gold API</small></div><button id="refreshGold" class="button button-secondary" type="button">Refresh gold</button>`;
+  const note = document.createElement("p");
+  note.className = "gold-api-note";
+  note.innerHTML = "The app requests the newest available API quote whenever it opens, regains focus, and every minute. <strong>Saturday note:</strong> wholesale gold markets are normally closed, so the displayed value will generally be the latest Friday quote—not a moving Saturday price.";
+  calculator.before(panel, note);
+
+  const style = document.createElement("style");
+  style.textContent = `.gold-live-panel{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:4px 0 10px;padding:18px;border-radius:18px;background:linear-gradient(125deg,rgba(12,23,32,.97),rgba(13,91,119,.92));color:#fff;box-shadow:0 16px 35px rgba(12,23,32,.18)}.gold-live-copy{display:grid;gap:4px}.gold-live-label{color:var(--gold-light);font-size:.73rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}#liveGoldPrice{font-size:clamp(1.55rem,4vw,2.2rem);line-height:1.1}#goldUpdatedAt{color:rgba(255,255,255,.72);font-size:.76rem}.gold-live-panel .button-secondary{background:#fff;color:var(--ink);white-space:nowrap}.gold-live-panel .button-secondary:disabled{opacity:.65;cursor:wait}.gold-api-note{margin:0 0 16px;color:#67767d;font-size:.78rem;line-height:1.55}@media(max-width:620px){.gold-live-panel{align-items:stretch;flex-direction:column}.gold-live-panel .button{width:100%}}`;
+  document.head.appendChild(style);
+
+  const getPacificParts = date => Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Los_Angeles",
+      weekday: "short",
+      hour: "2-digit",
+      hourCycle: "h23"
+    }).formatToParts(date).filter(part => part.type !== "literal").map(part => [part.type, part.value])
+  );
+
+  const isWeekendMarketClosed = date => {
+    const parts = getPacificParts(date);
+    const hour = Number(parts.hour);
+    return parts.weekday === "Sat" || (parts.weekday === "Sun" && hour < 15);
+  };
+
+  const parseSourceTime = payload => {
+    const value = payload?.updatedAt ?? payload?.updated_at ?? payload?.timestamp ?? payload?.time;
+    if (value == null) return null;
+    if (typeof value === "number") {
+      const millis = value < 1_000_000_000_000 ? value * 1000 : value;
+      const date = new Date(millis);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
+
+  const formatTime = value => {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return "recently";
+    return new Intl.DateTimeFormat("en-US", {
+      weekday: "short",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "America/Los_Angeles",
+      timeZoneName: "short"
+    }).format(date);
+  };
+
+  const display = (payload, cached = false) => {
+    const price = Number(payload?.price);
+    if (!(price > 0)) throw new Error("Gold API returned an invalid price");
+
+    const fetchedAt = new Date(payload.fetchedAt || payload.savedAt || Date.now());
+    const sourceAt = parseSourceTime(payload);
+    const weekendClosed = isWeekendMarketClosed(new Date());
+    const sourceAge = sourceAt ? Date.now() - sourceAt.getTime() : 0;
+
+    document.querySelector("#liveGoldPrice").textContent = `${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(price)} / oz`;
+    document.querySelector("#goldLiveLabel").textContent = weekendClosed ? "Latest available XAU/USD · weekend market closed" : "Latest available XAU/USD · 1 troy oz";
+
+    let status;
+    if (cached) status = `Saved quote · fetched ${formatTime(fetchedAt)}`;
+    else if (weekendClosed) status = `Markets closed for weekend · newest available quote · fetched ${formatTime(fetchedAt)}`;
+    else if (sourceAt && sourceAge > 5 * 60_000) status = `Latest API quote may be delayed · source ${formatTime(sourceAt)}`;
+    else status = `Newest available market quote · fetched ${formatTime(fetchedAt)}`;
+
+    document.querySelector("#goldUpdatedAt").textContent = status;
+    spotInput.value = price.toFixed(2);
+    updateQuote();
+  };
+
+  const load = async ({ announce = false, force = false } = {}) => {
+    if (loading) return;
+    if (!force && Date.now() - lastSuccessfulFetch < MIN_REFRESH_MS) return;
+
+    const priceElement = document.querySelector("#liveGoldPrice");
+    const updatedElement = document.querySelector("#goldUpdatedAt");
+    const refreshButton = document.querySelector("#refreshGold");
+    loading = true;
+    refreshButton.disabled = true;
+    priceElement.textContent = "Loading newest gold quote…";
+    updatedElement.textContent = "Requesting a fresh API response";
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8_000);
+
+    try {
+      const url = new URL(GOLD_API_BASE);
+      url.searchParams.set("_fresh", String(Date.now()));
+      const response = await fetch(url.toString(), { cache: "no-store", signal: controller.signal });
+      if (!response.ok) throw new Error(`Gold API returned ${response.status}`);
+      const saved = { ...(await response.json()), fetchedAt: new Date().toISOString() };
+      localStorage.setItem(GOLD_CACHE_KEY, JSON.stringify(saved));
+      lastSuccessfulFetch = Date.now();
+      display(saved);
+      if (announce) showToast("Newest gold quote loaded");
+    } catch (error) {
+      console.error(error);
+      try {
+        const cached = JSON.parse(localStorage.getItem(GOLD_CACHE_KEY));
+        if (cached) {
+          display(cached, true);
+          if (announce) showToast("Using the last saved gold quote");
+          return;
+        }
+      } catch (cacheError) {
+        console.error(cacheError);
+      }
+      priceElement.textContent = "Gold quote unavailable";
+      updatedElement.textContent = "Enter spot price manually below";
+      if (announce) showToast("Could not refresh gold quote");
+    } finally {
+      clearTimeout(timeout);
+      loading = false;
+      refreshButton.disabled = false;
+    }
+  };
+
+  document.querySelector("#refreshGold").addEventListener("click", () => load({ announce: true, force: true }));
+  window.addEventListener("focus", () => load());
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") load();
+  });
+
+  load({ force: true });
+  setInterval(() => load(), 60_000);
+})();'''
+
+          app = app[:app.index(marker)] + replacement + '\n'
+          app_path.write_text(app)
+
+          sw_path = Path('sw.js')
+          sw = sw_path.read_text()
+          sw = re.sub(r'weekend-luxe-v\d+', 'weekend-luxe-v6', sw, count=1)
+          sw_path.write_text(sw)
+
+          Path('.github/workflows/refresh-gold-latest.yml').unlink()
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js sw.js .github/workflows/refresh-gold-latest.yml
+          git commit -m "Use newest available gold quote"
+          git push
