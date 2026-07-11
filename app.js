@@ -176,6 +176,79 @@ let lastGoldFetchAt = 0;
 let goldRequestInFlight = null;
 let deferredInstallPrompt;
 
+
+function prepareDom() {
+  const status = $(".status-strip");
+  if (status) {
+    status.className = "status-strip status-center glass";
+    status.setAttribute("aria-label", "Current itinerary status");
+    status.innerHTML = `
+      <div class="status-item status-now">
+        <span class="status-label">Now</span>
+        <strong id="nowStop">Getting ready</strong>
+        <small id="nowDetail">Your weekend plan is ready.</small>
+      </div>
+      <div class="status-item status-next">
+        <span class="status-label">Next</span>
+        <strong id="nextStop">Loading itinerary…</strong>
+        <small id="countdown">—</small>
+      </div>
+      <div class="status-item status-leave">
+        <span class="status-label">Leave by</span>
+        <strong id="leaveBy">—</strong>
+        <small id="leaveDetail">We’ll keep this current.</small>
+      </div>
+      <a id="nextMapButton" class="button button-primary status-map-button" target="_blank" rel="noopener" hidden>Open in Apple Maps</a>
+    `;
+  }
+
+  const tabList = $(".day-switcher");
+  tabList?.setAttribute("role", "tablist");
+  $$(".day-tab").forEach(tab => {
+    const day = tab.dataset.day;
+    tab.setAttribute("role", "tab");
+    tab.id = `tab-${day}`;
+    tab.setAttribute("aria-controls", day);
+  });
+  $$(".day-panel").forEach(panel => {
+    panel.setAttribute("role", "tabpanel");
+    panel.setAttribute("aria-labelledby", `tab-${panel.id}`);
+    panel.tabIndex = 0;
+  });
+
+  $$(".stop-card[data-datetime]").forEach(card => {
+    const input = card.querySelector("input[data-check]");
+    if (input) card.dataset.stopId = input.dataset.check;
+    const title = card.querySelector("h3");
+    if (title && input) {
+      title.id = `title-${input.dataset.check}`;
+      card.setAttribute("aria-labelledby", title.id);
+    }
+  });
+
+  $$("a[href*='google.com/maps']").forEach(link => {
+    try {
+      const source = new URL(link.href);
+      const destination = source.searchParams.get("destination") || source.searchParams.get("query");
+      const origin = source.searchParams.get("origin");
+      if (!destination) return;
+      const apple = new URL("https://maps.apple.com/");
+      if (origin) apple.searchParams.set("saddr", origin);
+      apple.searchParams.set("daddr", destination);
+      apple.searchParams.set("dirflg", "d");
+      link.href = apple.toString();
+      if (["Directions", "Route"].includes(link.textContent.trim())) link.textContent = "Open in Apple Maps";
+    } catch (error) {
+      console.error("Could not convert map link", error);
+    }
+  });
+
+  const finePrint = $(".tool-card .fine-print");
+  if (finePrint) {
+    finePrint.textContent = "Latest market spot is a reference point, not the dealer’s retail price. On weekends the quote may reflect Friday’s close. Confirm purity, weight, authenticity, receipt details, and return/buyback terms.";
+  }
+}
+
 function showToast(message) {
   const toast = $("#toast");
   if (!toast) return;
@@ -643,6 +716,7 @@ function setupRefreshEvents() {
 }
 
 function init() {
+  prepareDom();
   setupTabs();
   loadChecks();
   createGoldPanel();
