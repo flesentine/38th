@@ -9,6 +9,10 @@ A polished, installable single-page web app for the July 11–12, 2026 birthday 
 - Persistent itinerary and packing checklists stored in the browser.
 - Installable PWA support and offline app shell.
 
+## Live site
+
+https://flesentine.github.io/38th/
+
 ## Run locally
 
 Because the weather API and service worker work best over HTTP, start a local server from this folder:
