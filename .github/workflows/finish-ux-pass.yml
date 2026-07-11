@@ -1,0 +1,130 @@
+name: Finish Weekend Luxe UX pass
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/finish-ux-pass.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  finish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply DOM, styles and cache updates
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          app_path = Path("app.js")
+          app = app_path.read_text()
+          if "function prepareDom()" not in app:
+              prepare = r'''
+          function prepareDom() {
+            const status = $(".status-strip");
+            if (status) {
+              status.className = "status-strip status-center glass";
+              status.setAttribute("aria-label", "Current itinerary status");
+              status.innerHTML = `
+                <div class="status-item status-now">
+                  <span class="status-label">Now</span>
+                  <strong id="nowStop">Getting ready</strong>
+                  <small id="nowDetail">Your weekend plan is ready.</small>
+                </div>
+                <div class="status-item status-next">
+                  <span class="status-label">Next</span>
+                  <strong id="nextStop">Loading itinerary…</strong>
+                  <small id="countdown">—</small>
+                </div>
+                <div class="status-item status-leave">
+                  <span class="status-label">Leave by</span>
+                  <strong id="leaveBy">—</strong>
+                  <small id="leaveDetail">We’ll keep this current.</small>
+                </div>
+                <a id="nextMapButton" class="button button-primary status-map-button" target="_blank" rel="noopener" hidden>Open in Apple Maps</a>
+              `;
+            }
+
+            const tabList = $(".day-switcher");
+            tabList?.setAttribute("role", "tablist");
+            $$(".day-tab").forEach(tab => {
+              const day = tab.dataset.day;
+              tab.setAttribute("role", "tab");
+              tab.id = `tab-${day}`;
+              tab.setAttribute("aria-controls", day);
+            });
+            $$(".day-panel").forEach(panel => {
+              panel.setAttribute("role", "tabpanel");
+              panel.setAttribute("aria-labelledby", `tab-${panel.id}`);
+              panel.tabIndex = 0;
+            });
+
+            $$(".stop-card[data-datetime]").forEach(card => {
+              const input = card.querySelector("input[data-check]");
+              if (input) card.dataset.stopId = input.dataset.check;
+              const title = card.querySelector("h3");
+              if (title && input) {
+                title.id = `title-${input.dataset.check}`;
+                card.setAttribute("aria-labelledby", title.id);
+              }
+            });
+
+            $$("a[href*='google.com/maps']").forEach(link => {
+              try {
+                const source = new URL(link.href);
+                const destination = source.searchParams.get("destination") || source.searchParams.get("query");
+                const origin = source.searchParams.get("origin");
+                if (!destination) return;
+                const apple = new URL("https://maps.apple.com/");
+                if (origin) apple.searchParams.set("saddr", origin);
+                apple.searchParams.set("daddr", destination);
+                apple.searchParams.set("dirflg", "d");
+                link.href = apple.toString();
+                if (["Directions", "Route"].includes(link.textContent.trim())) link.textContent = "Open in Apple Maps";
+              } catch (error) {
+                console.error("Could not convert map link", error);
+              }
+            });
+
+            const finePrint = $(".tool-card .fine-print");
+            if (finePrint) {
+              finePrint.textContent = "Latest market spot is a reference point, not the dealer’s retail price. On weekends the quote may reflect Friday’s close. Confirm purity, weight, authenticity, receipt details, and return/buyback terms.";
+            }
+          }
+          '''
+              app = app.replace("function showToast(message) {", prepare + "\nfunction showToast(message) {")
+              app = app.replace("function init() {\n  setupTabs();", "function init() {\n  prepareDom();\n  setupTabs();")
+              app_path.write_text(app)
+
+          css_path = Path("styles.css")
+          css = css_path.read_text()
+          marker = "/* Day-of UX pass */"
+          if marker not in css:
+              css += r'''
+
+          /* Day-of UX pass */
+          .status-center{grid-template-columns:minmax(0,1.25fr) minmax(0,1.2fr) minmax(140px,.7fr) auto;align-items:center}.status-item{min-width:0}.status-item strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.status-item small{color:#68767d;font-size:.76rem;line-height:1.35}.status-now strong{color:var(--blue)}.status-map-button{justify-content:center;text-decoration:none;text-align:center;white-space:nowrap;min-height:44px;display:inline-flex;align-items:center}.status-map-button[hidden]{display:none}.day-tab:focus-visible,.button:focus-visible,.mini-button:focus-visible,.text-button:focus-visible,.check-control:focus-within{outline:3px solid rgba(13,91,119,.35);outline-offset:3px}.stop-card{transition:opacity .22s ease,transform .22s ease,box-shadow .22s ease,background .22s ease}.stop-card.is-current{border:1px solid rgba(13,91,119,.45);box-shadow:0 20px 50px rgba(13,91,119,.18);transform:translateY(-2px)}.stop-card.is-current::after{content:"NOW";position:absolute;right:16px;top:14px;border-radius:999px;padding:5px 8px;background:var(--blue);color:white;font-size:.62rem;font-weight:900;letter-spacing:.12em}.stop-card.is-next:not(.is-complete){border:1px solid rgba(184,134,47,.35)}.stop-card.is-complete{opacity:.58;box-shadow:none;background:rgba(255,255,255,.58)}.stop-card.is-complete .stop-content>p,.stop-card.is-complete .stop-meta,.stop-card.is-complete .callout,.stop-card.is-complete .reservation-chip,.stop-card.is-complete .stop-actions>a{display:none}.stop-card.is-complete .stop-content h3{text-decoration:line-through;text-decoration-thickness:1px}.stop-card.is-complete .stop-actions{margin-top:8px}.stop-card.is-complete .check-control{color:#48645c}.gold-live-panel{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:4px 0 10px;padding:18px;border-radius:18px;background:linear-gradient(125deg,rgba(12,23,32,.97),rgba(13,91,119,.92));color:#fff;box-shadow:0 16px 35px rgba(12,23,32,.18)}.gold-live-copy{display:grid;gap:4px}.gold-live-label{color:var(--gold-light);font-size:.73rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}#liveGoldPrice{font-size:clamp(1.55rem,4vw,2.2rem);line-height:1.1}#goldUpdatedAt{color:rgba(255,255,255,.76);font-size:.76rem;line-height:1.4}.gold-live-panel .button-secondary{background:#fff;color:var(--ink);white-space:nowrap;display:inline-flex;align-items:center;gap:8px}.gold-live-panel .button-secondary:disabled{cursor:progress;opacity:.84}.gold-api-note{margin:0 0 16px;color:#67767d;font-size:.78rem}.gold-spinner{display:none;width:14px;height:14px;border:2px solid rgba(12,23,32,.22);border-top-color:var(--ink);border-radius:50%;animation:gold-spin .7s linear infinite}.gold-live-panel.is-refreshing .gold-spinner{display:inline-block}@keyframes gold-spin{to{transform:rotate(360deg)}}
+          @media(max-width:980px){.status-center{grid-template-columns:1fr 1fr}.status-map-button{width:100%}}
+          @media(max-width:650px){body.is-weekend-day .hero{padding-top:6px}body.is-weekend-day .brand-card{grid-template-columns:76px 1fr;text-align:left;gap:13px;padding:13px}body.is-weekend-day .brand-logo{width:76px;margin:0;border-radius:16px}body.is-weekend-day .brand-copy{text-align:left}body.is-weekend-day .brand-copy h1{font-size:1.72rem;line-height:1.05}body.is-weekend-day .hero-subtitle{display:none}body.is-weekend-day .brand-copy .eyebrow{font-size:.62rem;margin-bottom:5px}body.is-weekend-day .hero-actions{justify-content:flex-start;margin-top:10px}body.is-weekend-day .hero-actions .button{padding:9px 12px;font-size:.78rem}.status-center{grid-template-columns:1fr;padding:14px;gap:10px}.status-center>.status-item{padding-bottom:10px;border-bottom:1px solid var(--line)}.status-center>.status-leave{border-bottom:0;padding-bottom:0}.status-item strong{white-space:normal}.status-map-button{position:sticky;bottom:max(10px,env(safe-area-inset-bottom));z-index:30;box-shadow:0 12px 30px rgba(12,23,32,.28)}.gold-live-panel{align-items:stretch;flex-direction:column}.gold-live-panel .button{width:100%;justify-content:center}.stop-card.is-current::after{right:10px;top:10px}}
+          @media(prefers-reduced-motion:reduce){.stop-card,.toast,.gold-spinner{transition:none;animation-duration:.001ms}}
+          '''
+              css_path.write_text(css)
+
+          sw_path = Path("sw.js")
+          sw = sw_path.read_text().replace('const CACHE = "weekend-luxe-v7";', 'const CACHE = "weekend-luxe-v8";')
+          sw_path.write_text(sw)
+          PY
+      - name: Commit UX finish
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js styles.css sw.js
+          if git diff --cached --quiet; then
+            echo "No changes needed"
+          else
+            git commit -m "Finish day-of UX pass"
+            git push
+          fi
