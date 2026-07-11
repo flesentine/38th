@@ -8,9 +8,10 @@
   "theme_color": "#0c1720",
   "icons": [
     {
-      "src": "assets/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
+      "src": "assets/weekend-luxe-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }
