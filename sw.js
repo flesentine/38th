@@ -1,4 +1,4 @@
-const CACHE = "weekend-luxe-v3";
+const CACHE = "weekend-luxe-v5";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -23,7 +23,7 @@ self.addEventListener("activate", event => {
 self.addEventListener("fetch", event => {
   const request = event.request;
 
-  if (request.url.includes("api.open-meteo.com")) {
+  if (request.url.includes("api.open-meteo.com") || request.url.includes("api.gold-api.com")) {
     event.respondWith(fetch(request).catch(() => caches.match(request)));
     return;
   }
