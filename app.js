@@ -170,7 +170,7 @@ const weatherMap = {
   96: ["Storm with hail", "⛈️"], 99: ["Severe storm", "⛈️"]
 };
 
-const GOLD_API_URL = "https://api.gold-api.com/price/XAU/USD";
+const GOLD_API_URL = "https://api.gold-api.com/price/XAU";
 const GOLD_CACHE_KEY = "weekend-luxe-live-gold";
 let lastGoldFetchAt = 0;
 let goldRequestInFlight = null;
@@ -628,8 +628,7 @@ async function loadGoldPrice({ announce = false, force = false } = {}) {
 
   goldRequestInFlight = (async () => {
     try {
-      const freshUrl = `${GOLD_API_URL}?_fresh=${Date.now()}`;
-      const response = await fetch(freshUrl, {
+      const response = await fetch(GOLD_API_URL, {
         cache: "no-store",
         headers: { Accept: "application/json" }
       });
@@ -681,19 +680,9 @@ async function sharePlan() {
 }
 
 function setupInstallPrompt() {
-  window.addEventListener("beforeinstallprompt", event => {
-    event.preventDefault();
-    deferredInstallPrompt = event;
-    $("#installButton").hidden = false;
-  });
-
-  $("#installButton")?.addEventListener("click", async () => {
-    if (!deferredInstallPrompt) return;
-    deferredInstallPrompt.prompt();
-    await deferredInstallPrompt.userChoice;
-    deferredInstallPrompt = null;
-    $("#installButton").hidden = true;
-  });
+  // Let Chrome expose its native install UI. Intercepting the event without
+  // immediately prompting creates a noisy console warning.
+  $("#installButton")?.remove();
 }
 
 function setupRefreshEvents() {

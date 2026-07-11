@@ -1,4 +1,4 @@
-const CACHE = "weekend-luxe-v10";
+const CACHE = "weekend-luxe-v11";
 const APP_SHELL = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./assets/weekend-luxe-logo.svg"];
 
 const MOBILE_WEATHER_CSS = `
