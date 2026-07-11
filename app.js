@@ -1,9 +1,11 @@
 const itinerary = [
-  { name: "Aloha Stacks breakfast", date: "2026-07-11T07:45:00-07:00" },
+  { name: "Leave RSM for Downtown LA", date: "2026-07-11T08:15:00-07:00" },
   { name: "Buy 24k bullion in DTLA", date: "2026-07-11T10:00:00-07:00" },
   { name: "Fountain Coffee Room", date: "2026-07-11T12:15:00-07:00" },
   { name: "Rodeo Drive", date: "2026-07-11T14:00:00-07:00" },
   { name: "Greystone Mansion", date: "2026-07-11T16:15:00-07:00" },
+  { name: "Aloha Stacks birthday breakfast", date: "2026-07-12T09:30:00-07:00" },
+  { name: "Relax at home and get ready", date: "2026-07-12T10:45:00-07:00" },
   { name: "Leave for Laguna", date: "2026-07-12T14:15:00-07:00" },
   { name: "Sawdust Art Festival", date: "2026-07-12T15:15:00-07:00" },
   { name: "Arrive at Surf & Sand", date: "2026-07-12T18:30:00-07:00" },
@@ -43,133 +45,6 @@ const weatherMap = {
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
-
-const GOLD_API_URL = "https://api.gold-api.com/price/XAU/USD";
-const GOLD_CACHE_KEY = "weekend-luxe-live-gold";
-
-function convertMapLinksToAppleMaps() {
-  $$("a[href*='google.com/maps']").forEach(link => {
-    try {
-      const source = new URL(link.href);
-      const isDirections = source.pathname.includes("/dir/");
-      const destination = source.searchParams.get("destination") || source.searchParams.get("query");
-      const origin = source.searchParams.get("origin");
-      if (!destination) return;
-
-      const apple = new URL("https://maps.apple.com/");
-      if (origin) apple.searchParams.set("saddr", origin);
-      apple.searchParams.set("daddr", destination);
-      apple.searchParams.set("dirflg", "d");
-      link.href = apple.toString();
-
-      const label = link.textContent.trim();
-      if (label === "Directions") link.textContent = "Apple Maps";
-      if (label === "Route" || isDirections) link.textContent = "Open in Maps";
-    } catch (error) {
-      console.error("Could not convert map link", error);
-    }
-  });
-
-  const footerNotes = $$("footer p");
-  if (footerNotes[1]) footerNotes[1].textContent = "Weather: Open-Meteo · Gold: Gold API · Directions: Apple Maps";
-}
-
-function createGoldPanel() {
-  const spotInput = $("#spotPrice");
-  const calculator = spotInput?.closest(".calculator-grid");
-  if (!calculator || $("#liveGoldPrice")) return;
-
-  const panel = document.createElement("div");
-  panel.className = "gold-live-panel";
-  panel.setAttribute("aria-live", "polite");
-  panel.innerHTML = `
-    <div class="gold-live-copy">
-      <span class="gold-live-label">Live XAU/USD spot · 1 troy oz</span>
-      <strong id="liveGoldPrice">Loading current gold price…</strong>
-      <small id="goldUpdatedAt">Connecting to Gold API</small>
-    </div>
-    <button id="refreshGold" class="button button-secondary" type="button">Refresh gold</button>
-  `;
-
-  const note = document.createElement("p");
-  note.className = "gold-api-note";
-  note.textContent = "Live market spot automatically fills the calculator. A dealer’s retail price will normally be higher.";
-  calculator.before(panel, note);
-
-  const style = document.createElement("style");
-  style.textContent = `
-    .gold-live-panel{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:4px 0 10px;padding:18px;border-radius:18px;background:linear-gradient(125deg,rgba(12,23,32,.97),rgba(13,91,119,.92));color:#fff;box-shadow:0 16px 35px rgba(12,23,32,.18)}
-    .gold-live-copy{display:grid;gap:4px}.gold-live-label{color:var(--gold-light);font-size:.73rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
-    #liveGoldPrice{font-size:clamp(1.55rem,4vw,2.2rem);line-height:1.1}#goldUpdatedAt{color:rgba(255,255,255,.72);font-size:.76rem}
-    .gold-live-panel .button-secondary{background:#fff;color:var(--ink);white-space:nowrap}.gold-api-note{margin:0 0 16px;color:#67767d;font-size:.78rem}
-    @media(max-width:620px){.gold-live-panel{align-items:stretch;flex-direction:column}.gold-live-panel .button{width:100%}}
-  `;
-  document.head.appendChild(style);
-}
-
-function formatGoldTimestamp(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Updated recently";
-  return `Updated ${new Intl.DateTimeFormat("en-US", {
-    weekday: "short",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "America/Los_Angeles",
-    timeZoneName: "short"
-  }).format(date)}`;
-}
-
-function displayGoldPrice(payload, { stale = false } = {}) {
-  const price = Number(payload?.price);
-  if (!(price > 0)) throw new Error("Gold API returned an invalid price");
-
-  const formattedPrice = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(price);
-
-  $("#liveGoldPrice").textContent = `${formattedPrice} / oz`;
-  const sourceTime = payload.updatedAt || payload.savedAt || new Date().toISOString();
-  $("#goldUpdatedAt").textContent = `${formatGoldTimestamp(sourceTime)}${stale ? " · saved value" : " · live market spot"}`;
-  $("#spotPrice").value = price.toFixed(2);
-  updateQuote();
-}
-
-async function loadGoldPrice({ announce = false } = {}) {
-  const priceElement = $("#liveGoldPrice");
-  const updatedElement = $("#goldUpdatedAt");
-  if (!priceElement || !updatedElement) return;
-
-  priceElement.textContent = "Loading current gold price…";
-  updatedElement.textContent = "Connecting to Gold API";
-
-  try {
-    const response = await fetch(GOLD_API_URL, { cache: "no-store" });
-    if (!response.ok) throw new Error(`Gold API returned ${response.status}`);
-    const payload = await response.json();
-    const saved = { ...payload, savedAt: new Date().toISOString() };
-    localStorage.setItem(GOLD_CACHE_KEY, JSON.stringify(saved));
-    displayGoldPrice(saved);
-    if (announce) showToast("Gold spot price refreshed");
-  } catch (error) {
-    console.error(error);
-    const cached = localStorage.getItem(GOLD_CACHE_KEY);
-    if (cached) {
-      try {
-        displayGoldPrice(JSON.parse(cached), { stale: true });
-        if (announce) showToast("Using the last saved gold price");
-        return;
-      } catch (cacheError) {
-        console.error(cacheError);
-      }
-    }
-    priceElement.textContent = "Gold price unavailable";
-    updatedElement.textContent = "Enter spot price manually below";
-    if (announce) showToast("Could not refresh gold price");
-  }
-}
 
 function showToast(message) {
   const toast = $("#toast");
@@ -325,7 +200,7 @@ function updateQuote() {
 async function sharePlan() {
   const data = {
     title: "Weekend Luxe Birthday Plan",
-    text: "Saturday: DTLA gold + Beverly Hills. Sunday: Sawdust + Splashes in Laguna Beach.",
+    text: "Saturday: DTLA gold + Beverly Hills. Sunday: Aloha Stacks + Sawdust + Splashes in Laguna Beach.",
     url: window.location.href
   };
   try {
@@ -354,11 +229,7 @@ $("#installButton").addEventListener("click", async () => {
   $("#installButton").hidden = true;
 });
 
-convertMapLinksToAppleMaps();
-createGoldPanel();
-
 $$(".day-tab").forEach(tab => tab.addEventListener("click", () => setDay(tab.dataset.day)));
-$("#refreshGold")?.addEventListener("click", () => loadGoldPrice({ announce: true }));
 $("#refreshWeather").addEventListener("click", () => { loadWeather(); showToast("Refreshing forecast"); });
 $("#shareButton").addEventListener("click", sharePlan);
 [$("#spotPrice"), $("#dealerPrice"), $("#buybackPrice")].forEach(input => input.addEventListener("input", updateQuote));
@@ -366,11 +237,104 @@ $("#shareButton").addEventListener("click", sharePlan);
 setDay(localStorage.getItem("weekend-luxe-day") || "saturday");
 loadChecks();
 loadWeather();
-loadGoldPrice();
 updateCountdown();
 setInterval(updateCountdown, 30_000);
-setInterval(() => loadGoldPrice(), 60_000);
 
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(console.error));
 }
+
+
+// Live gold pricing and Apple Maps enhancements.
+(() => {
+  const GOLD_API_URL = "https://api.gold-api.com/price/XAU/USD";
+  const GOLD_CACHE_KEY = "weekend-luxe-live-gold";
+  const all = selector => [...document.querySelectorAll(selector)];
+
+  all("a[href*='google.com/maps']").forEach(link => {
+    try {
+      const source = new URL(link.href);
+      const destination = source.searchParams.get("destination") || source.searchParams.get("query");
+      const origin = source.searchParams.get("origin");
+      if (!destination) return;
+      const apple = new URL("https://maps.apple.com/");
+      if (origin) apple.searchParams.set("saddr", origin);
+      apple.searchParams.set("daddr", destination);
+      apple.searchParams.set("dirflg", "d");
+      link.href = apple.toString();
+      if (link.textContent.trim() === "Directions") link.textContent = "Apple Maps";
+      if (link.textContent.trim() === "Route") link.textContent = "Open in Maps";
+    } catch (error) {
+      console.error("Could not convert map link", error);
+    }
+  });
+
+  const footerNotes = all("footer p");
+  if (footerNotes[1]) footerNotes[1].textContent = "Weather: Open-Meteo · Gold: Gold API · Directions: Apple Maps";
+
+  const spotInput = document.querySelector("#spotPrice");
+  const calculator = spotInput?.closest(".calculator-grid");
+  if (!calculator) return;
+
+  const panel = document.createElement("div");
+  panel.className = "gold-live-panel";
+  panel.setAttribute("aria-live", "polite");
+  panel.innerHTML = `<div class="gold-live-copy"><span class="gold-live-label">Live XAU/USD spot · 1 troy oz</span><strong id="liveGoldPrice">Loading current gold price…</strong><small id="goldUpdatedAt">Connecting to Gold API</small></div><button id="refreshGold" class="button button-secondary" type="button">Refresh gold</button>`;
+  const note = document.createElement("p");
+  note.className = "gold-api-note";
+  note.textContent = "Live market spot automatically fills the calculator. A dealer’s retail price will normally be higher.";
+  calculator.before(panel, note);
+
+  const style = document.createElement("style");
+  style.textContent = `.gold-live-panel{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:4px 0 10px;padding:18px;border-radius:18px;background:linear-gradient(125deg,rgba(12,23,32,.97),rgba(13,91,119,.92));color:#fff;box-shadow:0 16px 35px rgba(12,23,32,.18)}.gold-live-copy{display:grid;gap:4px}.gold-live-label{color:var(--gold-light);font-size:.73rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}#liveGoldPrice{font-size:clamp(1.55rem,4vw,2.2rem);line-height:1.1}#goldUpdatedAt{color:rgba(255,255,255,.72);font-size:.76rem}.gold-live-panel .button-secondary{background:#fff;color:var(--ink);white-space:nowrap}.gold-api-note{margin:0 0 16px;color:#67767d;font-size:.78rem}@media(max-width:620px){.gold-live-panel{align-items:stretch;flex-direction:column}.gold-live-panel .button{width:100%}}`;
+  document.head.appendChild(style);
+
+  const formatTime = value => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Updated recently";
+    return `Updated ${new Intl.DateTimeFormat("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles", timeZoneName: "short" }).format(date)}`;
+  };
+
+  const display = (payload, stale = false) => {
+    const price = Number(payload?.price);
+    if (!(price > 0)) throw new Error("Gold API returned an invalid price");
+    document.querySelector("#liveGoldPrice").textContent = `${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(price)} / oz`;
+    document.querySelector("#goldUpdatedAt").textContent = `${formatTime(payload.updatedAt || payload.savedAt || new Date().toISOString())}${stale ? " · saved value" : " · live market spot"}`;
+    spotInput.value = price.toFixed(2);
+    updateQuote();
+  };
+
+  const load = async announce => {
+    const priceElement = document.querySelector("#liveGoldPrice");
+    const updatedElement = document.querySelector("#goldUpdatedAt");
+    priceElement.textContent = "Loading current gold price…";
+    updatedElement.textContent = "Connecting to Gold API";
+    try {
+      const response = await fetch(GOLD_API_URL, { cache: "no-store" });
+      if (!response.ok) throw new Error(`Gold API returned ${response.status}`);
+      const saved = { ...(await response.json()), savedAt: new Date().toISOString() };
+      localStorage.setItem(GOLD_CACHE_KEY, JSON.stringify(saved));
+      display(saved);
+      if (announce) showToast("Gold spot price refreshed");
+    } catch (error) {
+      console.error(error);
+      try {
+        const cached = JSON.parse(localStorage.getItem(GOLD_CACHE_KEY));
+        if (cached) {
+          display(cached, true);
+          if (announce) showToast("Using the last saved gold price");
+          return;
+        }
+      } catch (cacheError) {
+        console.error(cacheError);
+      }
+      priceElement.textContent = "Gold price unavailable";
+      updatedElement.textContent = "Enter spot price manually below";
+      if (announce) showToast("Could not refresh gold price");
+    }
+  };
+
+  document.querySelector("#refreshGold").addEventListener("click", () => load(true));
+  load(false);
+  setInterval(() => load(false), 60_000);
+})();
