@@ -1,4 +1,4 @@
-const CACHE = "weekend-luxe-v9";
+const CACHE = "weekend-luxe-v10";
 const APP_SHELL = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./assets/weekend-luxe-logo.svg"];
 
 const MOBILE_WEATHER_CSS = `
@@ -25,7 +25,12 @@ const MOBILE_WEATHER_CSS = `
 `;
 
 async function appendMobileWeatherCss(response) {
-  if (!response) return new Response(MOBILE_WEATHER_CSS, { headers: { "Content-Type": "text/css; charset=utf-8" } });
+  if (!response) {
+    return new Response(MOBILE_WEATHER_CSS, {
+      headers: { "Content-Type": "text/css; charset=utf-8" }
+    });
+  }
+
   const css = await response.text();
   const headers = new Headers(response.headers);
   headers.set("Content-Type", "text/css; charset=utf-8");
@@ -42,7 +47,9 @@ self.addEventListener("install", event => {
 });
 
 self.addEventListener("activate", event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))));
+  event.waitUntil(
+    caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))
+  );
   self.clients.claim();
 });
 
@@ -50,27 +57,30 @@ self.addEventListener("fetch", event => {
   const request = event.request;
   const url = new URL(request.url);
 
-  if (request.url.includes("api.gold-api.com")) {
-    const freshUrl = new URL(request.url);
-    freshUrl.searchParams.set("_fresh", String(Date.now()));
-    const freshRequest = new Request(freshUrl.toString(), {
-      method: "GET",
-      mode: "cors",
-      credentials: "omit",
-      cache: "no-store",
-      redirect: "follow",
-      headers: { Accept: "application/json" }
-    });
-    event.respondWith(fetch(freshRequest).catch(() => fetch(request, { cache: "no-store" })));
+  // Ignore browser extensions and every non-web request. Cache.put only supports HTTP(S).
+  if (!["http:", "https:"].includes(url.protocol) || request.method !== "GET") return;
+
+  if (url.hostname === "api.gold-api.com") {
+    const canonicalUrl = "https://api.gold-api.com/price/XAU";
+    event.respondWith(
+      fetch(canonicalUrl, {
+        method: "GET",
+        mode: "cors",
+        credentials: "omit",
+        cache: "no-store",
+        redirect: "follow",
+        headers: { Accept: "application/json" }
+      })
+    );
     return;
   }
 
-  if (request.url.includes("api.open-meteo.com")) {
+  if (url.hostname === "api.open-meteo.com") {
     event.respondWith(fetch(request, { cache: "no-store" }).catch(() => caches.match(request)));
     return;
   }
 
-  if (url.pathname.endsWith("/styles.css")) {
+  if (url.origin === self.location.origin && url.pathname.endsWith("/styles.css")) {
     event.respondWith(
       fetch(request, { cache: "no-store" })
         .catch(() => caches.match(request))
@@ -83,8 +93,10 @@ self.addEventListener("fetch", event => {
     event.respondWith(
       fetch(request)
         .then(response => {
-          const copy = response.clone();
-          caches.open(CACHE).then(cache => cache.put("./index.html", copy));
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE).then(cache => cache.put("./index.html", copy)).catch(console.error);
+          }
           return response;
         })
         .catch(() => caches.match("./index.html"))
@@ -92,10 +104,15 @@ self.addEventListener("fetch", event => {
     return;
   }
 
+  // Let third-party HTTP(S) resources load normally instead of caching them.
+  if (url.origin !== self.location.origin) return;
+
   event.respondWith(
     caches.match(request).then(cached => cached || fetch(request).then(response => {
-      const copy = response.clone();
-      caches.open(CACHE).then(cache => cache.put(request, copy));
+      if (response.ok) {
+        const copy = response.clone();
+        caches.open(CACHE).then(cache => cache.put(request, copy)).catch(console.error);
+      }
       return response;
     }))
   );
